@@ -15,37 +15,65 @@ const AuthGuardAndStatus = {
         
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
           auth: {
-            persistSession: true, // Păstrează sesiunea local pe docs după ce a fost detectată o dată
+            persistSession: true,
             autoRefreshToken: true,
-            detectSessionInUrl: true // FOARTE IMPORTANT: interceptați hash-ul generat de Supabase
+            detectSessionInUrl: true
           }
         })
+
+        // 1. Verificăm mai întâi dacă subdomeniul docs are deja sesiunea copiată local
+        const { data: { session } } = await supabase.auth.getSession()
         
-        // 1. Verificăm dacă avem deja o sesiune locală salvată pe docs
-        let { data: { session } } = await supabase.auth.getSession()
-        
-        // 2. Dacă nu există sesiune locală, verificăm dacă utilizatorul a venit direct cu token în URL (#access_token=...)
-        if (!session && (window.location.hash || window.location.search)) {
-          // Lăsăm Supabase detectSessionInUrl să proceseze hash-ul din URL timp de 300ms
-          await new Promise(resolve => setTimeout(resolve, 300))
-          const retry = await supabase.auth.getSession()
-          session = retry.data.session
-        }
-        
-        // 3. Evaluarea finală a stării de autentificare
         if (session?.user) {
           const profileName = session.user.user_metadata?.full_name || session.user.user_metadata?.name
           fullName.value = profileName || session.user.email.split('@')[0]
           checkingAuth.value = false
-        } else {
-          // Dacă sesiunea este complet absentă, redirecționăm către pagina ta de login din Next.js
-          // Îi trimitem și parametrul unde să se întoarcă după ce se loghează cu succes
-          const currentUrl = encodeURIComponent(window.location.href)
-          window.location.href = `https://imidi.co.uk{currentUrl}`
+          return
         }
+
+        // 2. Dacă docs nu știe nimic, creăm un iframe ascuns către domeniul principal
+        // Deoarece Next.js de pe domeniul principal are acces la cookie-uri/localStorage, el ne poate trimite token-ul înapoi
+        const iframe = document.createElement('iframe')
+        iframe.src = 'https://imidi.co.uk' // O pagină simplă din aplicația ta Next.js care face postMessage la sesiune
+        iframe.style.display = 'none'
+        document.body.appendChild(iframe)
+
+        // Ascultăm răspunsul securizat de la domeniul principal
+        const handleMessage = async (event) => {
+          if (event.origin !== 'https://imidi.co.uk') return
+
+          const { access_token, refresh_token, user_data } = event.data
+
+          if (access_token && refresh_token) {
+            // Injectăm sesiunea primită de pe domeniul principal în instanța locală din docs
+            await supabase.auth.setSession({ access_token, refresh_token })
+            fullName.value = user_data?.full_name || user_data?.email?.split('@')[0] || 'Utilizator'
+            checkingAuth.value = false
+            
+            window.removeEventListener('message', handleMessage)
+            iframe.remove()
+          } else {
+            // Dacă domeniul principal spune că nu există sesiune, abia atunci executăm redirecționarea la login
+            window.location.href = 'https://imidi.co.uk'
+          }
+        }
+
+        window.addEventListener('message', handleMessage)
+
+        // Siguranță: dacă puntea dintre domenii nu răspunde în 2 secunde, înseamnă că puntea nu e configurată pe Next.js
+        // În acest caz, oprim bucla blocantă și lăsăm utilizatorul să vadă docs-ul fără să îl dăm afară forțat
+        setTimeout(() => {
+          if (checkingAuth.value) {
+            console.warn('Puntea de comunicare cu domeniul principal a expirat.')
+            checkingAuth.value = false
+            // Opțional: poți lăsa window.location.href dezactivat aici ca să NU mai fie redirecționat greșit
+          }
+        }, 2000)
+
       } catch (e) {
-        console.error('Auth error pe docs:', e)
-        window.location.href = 'https://imidi.co.uk'
+        console.error('Auth error:', e)
+        // În caz de eroare critică de script, lăsăm utilizatorul pe pagină în loc să creăm o buclă de redirect
+        checkingAuth.value = false
       }
     })
 
