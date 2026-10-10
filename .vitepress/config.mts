@@ -2,50 +2,75 @@ import { defineConfig } from 'vitepress'
 import fs from 'fs'
 import path from 'path'
 
-// Funcție utilitară pentru a găsi ultimul fișier .md modificat în proiect
-function getLatestMarkdownUpdate() {
-  try {
-    const docsDir = path.resolve(__dirname, '../') // Directorul rădăcină al documentelor ta
-    let latestFile = null;
-    let latestMtime = 0;
+// Dicționar de mapare pentru a afișa nume „faine” / „premium” în loc de numele brut al fișierului
+const labelMapping = {
+  'index': 'Ghid Introducere',
+  'configurare': 'Configurare Ecran OLED',
+  'mapping': 'Mapare Solo & Bass',
+  'specificatii': 'Specificații Tehnice',
+  'midi-interconnection': 'Arhitectură MIDI 3.0',
+  'firmware': 'Actualizare Firmware',
+  'faq': 'Întrebări Frecvente (FAQ)',
+  'instalare': 'Instalare Desktop & Mobile',
+  'latenta': 'Optimizare Latență (<1.8ms)',
+  'licentiere': 'Management Licențe Pro',
+  'samplers': 'Import Audio Samplers (.wav)',
+  'loopers': 'Loopere & Step Samplers',
+  'listare': 'Reguli Listare E-Market',
+  'ai-smith': 'Integrare Inteligență AI Smith',
+  'sincronizare': 'Sincronizare Profile Audio',
+  'backup': 'Backup Securizat 30GB'
+};
 
-    // Scanăm directoarele importante menționate în sidebar
-    const foldersToScan = ['i-volution', 'ts4x', 'e-market', 'cloud'];
+// Funcție premium care scanează și returnează ultimele 3 actualizări
+function getPremiumLatestUpdates() {
+  try {
+    const docsDir = path.resolve(__dirname, '../')
+    const foldersToScan = ['i-volution', 'ts4x', 'e-market', 'cloud']
+    let allFiles = []
 
     foldersToScan.forEach(folder => {
-      const folderPath = path.join(docsDir, folder);
+      const folderPath = path.join(docsDir, folder)
       if (fs.existsSync(folderPath)) {
-        const files = fs.readdirSync(folderPath);
+        const files = fs.readdirSync(folderPath)
         
         files.forEach(file => {
           if (file.endsWith('.md')) {
-            const filePath = path.join(folderPath, file);
-            const stat = fs.statSync(filePath);
+            const filePath = path.join(folderPath, file)
+            const stat = fs.statSync(filePath)
+            const baseName = file.replace('.md', '')
             
-            if (stat.mtimeMs > latestMtime) {
-              latestMtime = stat.mtimeMs;
-              // Generăm link-ul formatat corect pentru VitePress (ex: /ts4x/latenta)
-              const pageName = file === 'index.md' ? '' : file.replace('.md', '');
-              latestFile = {
-                text: `🔄 Recent: ${pageName || folder}`,
-                link: `/${folder}/${pageName}`
-              };
-            }
+            // Rezolvăm numele elegant al paginii
+            const cleanTitle = labelMapping[baseName] || (baseName === 'index' ? `Acasă ${folder}` : baseName)
+            
+            allFiles.push({
+              text: cleanTitle,
+              link: `/${folder}/${baseName === 'index' ? '' : baseName}`,
+              mtime: stat.mtimeMs
+            })
           }
         });
       }
-    });
+    })
 
-    // Dacă a găsit un fișier returnează-l, altfel pune un fallback
-    return latestFile || { text: 'Docs', link: '/' };
+    // Sortăm descrescător după data modificării și luăm primele 3 rezultate
+    const latestUpdates = allFiles
+      .sort((a, b) => b.mtime - a.mtime)
+      .slice(0, 3)
+
+    // Returnăm structura de tip Dropdown specifică VitePress
+    return {
+      text: '🟢 Recent Updates',
+      items: latestUpdates
+    }
   } catch (error) {
-    console.error("Eroare la citirea fișierelor markdown:", error);
-    return { text: 'Docs', link: '/' };
+    console.error("Eroare la generarea meniului premium:", error)
+    return { text: 'Docs', link: '/' }
   }
 }
 
-// Generăm dinamic item-ul pentru navbar la momentul rulării procesului de build / dev
-const latestUpdateItem = getLatestMarkdownUpdate();
+// Generăm structura dropdown la build-time
+const recentUpdatesDropdown = getPremiumLatestUpdates();
 
 export default defineConfig({
   title: "iMIDI . Docs",
@@ -53,14 +78,14 @@ export default defineConfig({
   themeConfig: {
     logo: '/logo.png',
     
-    // Top navigation menu (Nav Bar) cu item dinamic atașat la final
+    // Top navigation menu (Nav Bar)
     nav: [
       { text: 'Home', link: '/' },
       { text: 'TS4X Synth', link: '/ts4x/' },
       { text: 'i-volution Controller', link: '/i-volution/' },
       { text: 'E-Market', link: '/e-market/' },
       { text: 'Cloud & mySpace', link: '/cloud/' },
-      latestUpdateItem // <-- Aici apare automat ultimul fișier editat în cod!
+      recentUpdatesDropdown // <-- Meniul Dropdown Premium adăugat dinamic la finalul bării de navigare
     ],
 
     // Sidebars organized by section
@@ -128,7 +153,7 @@ export default defineConfig({
     },
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/Bm8725' }
+      { icon: 'github', link: 'https://github.com' }
     ],
 
     footer: {
