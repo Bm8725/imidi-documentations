@@ -9,10 +9,10 @@ title: iMIDI Platform
 <span class="im-eyebrow">Documentation</span>
 <h1 class="im-title">iMIDI Platform</h1>
 <p class="im-sub">Shape the Digital Future</p>
-<p class="im-tag">Official user documentation and system reference manuals for the T=K22 MIDI Accordion Controller ecosystem.</p>
+
 <div class="im-actions">
 <a href="/i-volution/" class="im-btn im-btn-primary">Open Documentation <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-<a href="https://imidi.co.uk" target="_blank" rel="noopener" class="im-btn im-btn-ghost">i-volution Market <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+<a href="https://imidi.co.uk/e-market" target="_blank" rel="noopener" class="im-btn im-btn-ghost">i-volution Market <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
 </div>
 </header>
 <!-- AT A GLANCE (cifre luate din textele de mai jos) -->
