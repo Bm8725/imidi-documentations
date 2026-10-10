@@ -81,12 +81,17 @@ function getPremiumLatestUpdates() {
 const recentUpdatesDropdown = getPremiumLatestUpdates();
 
 export default defineConfig({
-  title: "iMIDI . Docs",
+  title: ". DOCS",
   description: "Official guides, manuals and specifications for iMIDI",
+    head: [
+    ['link', { rel: 'icon', href: '/logo.png' }] 
+    // Dacă ai fișier .png, folosești: ['link', { rel: 'icon', href: '/favicon.png', type: 'image/png' }]
+  ],
+
   themeConfig: {
     logo: '/logo.png', // Plasează logo.png în folderul public
     
-    // 🔍 INTEGRAREA SISTEMULUI DE CĂUTARE PREMIUM NATIV (MiniSearch)
+ 
     search: {
       provider: 'local',
       options: {
