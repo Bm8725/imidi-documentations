@@ -86,32 +86,7 @@ title: iMIDI Platform
 <a href="/i-volution/" class="im-btn im-btn-primary">Open Documentation <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
 </section>
 <!-- FOOTER -->
-<footer class="im-footer">
-<div class="im-foot-top">
-<div class="im-foot-brand">
-<span class="im-logo">iMIDI.co.uk</span>
-<p>Redefining digital interconnection ecosystems for modern stage and studio audio architecture.</p>
-</div>
-<nav class="im-foot-links" aria-label="Footer">
-<div>
-<h4>Ecosystem</h4>
-<a href="https://imidi.co.uk" target="_blank" rel="noopener">Platform Home</a>
-<a href="https://imidi.co.uk/products/user_manual" target="_blank" rel="noopener">i-volution Market</a>
-</div>
-<div>
-<h4>Resources</h4>
-<a href="/i-volution/">Documentation</a>
-<a href="#">Support Center</a>
-</div>
-<div>
-<h4>Legal</h4>
-<a href="#">Privacy Policy</a>
-<a href="#">Terms</a>
-</div>
-</nav>
-</div>
-<p class="im-copy">© 2026 iMIDI Platform. All rights reserved.</p>
-</footer>
+
 </div>
 
 <style>
