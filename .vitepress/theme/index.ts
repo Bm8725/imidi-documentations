@@ -4,6 +4,32 @@ import { h, ref, onMounted } from 'vue'
 const SUPABASE_URL = 'https://supabase.co'
 const SUPABASE_ANON_KEY = 'sb_publishable_H9tcriVnzdNjXOxgU2wLVQ_Hp_BlT4q'
 
+// Funcție care extrage și curăță cookie-ul generat de Next.js
+function getNextJsSupabaseSession() {
+  if (typeof document === 'undefined') return null
+  
+  const cookies = document.cookie.split(';')
+  for (let c of cookies) {
+    c = c.trim()
+    // Căutăm cookie-ul nativ Supabase generat de Next.js (conține auth-token în nume)
+    if (c.includes('auth-token')) {
+      try {
+        const rawValue = c.substring(c.indexOf('=') + 1)
+        const decodedValue = decodeURIComponent(rawValue)
+        
+        // Next.js tinde să serializeze obiectul sau să îl salveze ca string JSON curat
+        if (decodedValue.startsWith('base64:')) {
+          return JSON.parse(atob(decodedValue.replace('base64:', '')))
+        }
+        return JSON.parse(decodedValue)
+      } catch (e) {
+        console.error('Eroare decodificare cookie Next.js:', e)
+      }
+    }
+  }
+  return null
+}
+
 const AuthGuardAndStatus = {
   setup() {
     const fullName = ref('')
@@ -21,59 +47,38 @@ const AuthGuardAndStatus = {
           }
         })
 
-        // 1. Verificăm mai întâi dacă subdomeniul docs are deja sesiunea copiată local
-        const { data: { session } } = await supabase.auth.getSession()
+        // 1. Verificăm dacă avem deja sesiune locală pe docs
+        let { data: { session } } = await supabase.auth.getSession()
         
+        // 2. Dacă nu există local, încercăm să citim cookie-ul nativ din Next.js
+        if (!session) {
+          const nextSession = getNextJsSupabaseSession()
+          
+          if (nextSession && (nextSession.access_token || nextSession.currentSession?.access_token)) {
+            const tokenData = nextSession.currentSession || nextSession
+            
+            // Forțăm instanța din docs să asimileze token-ul de pe domeniul principal
+            const { data } = await supabase.auth.setSession({
+              access_token: tokenData.access_token,
+              refresh_token: tokenData.refresh_token
+            })
+            session = data.session
+          }
+        }
+
+        // 3. Decizia finală: Îl lăsăm pe pagină sau îl trimitem la login
         if (session?.user) {
           const profileName = session.user.user_metadata?.full_name || session.user.user_metadata?.name
           fullName.value = profileName || session.user.email.split('@')[0]
           checkingAuth.value = false
-          return
+        } else {
+          // Dacă nu e logat deloc pe imidi.co.uk, îl trimitem direct la login în Next.js
+          window.location.href = 'https://imidi.co.uk'
         }
-
-        // 2. Dacă docs nu știe nimic, creăm un iframe ascuns către domeniul principal
-        // Deoarece Next.js de pe domeniul principal are acces la cookie-uri/localStorage, el ne poate trimite token-ul înapoi
-        const iframe = document.createElement('iframe')
-        iframe.src = 'https://imidi.co.uk' // O pagină simplă din aplicația ta Next.js care face postMessage la sesiune
-        iframe.style.display = 'none'
-        document.body.appendChild(iframe)
-
-        // Ascultăm răspunsul securizat de la domeniul principal
-        const handleMessage = async (event) => {
-          if (event.origin !== 'https://imidi.co.uk') return
-
-          const { access_token, refresh_token, user_data } = event.data
-
-          if (access_token && refresh_token) {
-            // Injectăm sesiunea primită de pe domeniul principal în instanța locală din docs
-            await supabase.auth.setSession({ access_token, refresh_token })
-            fullName.value = user_data?.full_name || user_data?.email?.split('@')[0] || 'Utilizator'
-            checkingAuth.value = false
-            
-            window.removeEventListener('message', handleMessage)
-            iframe.remove()
-          } else {
-            // Dacă domeniul principal spune că nu există sesiune, abia atunci executăm redirecționarea la login
-            window.location.href = 'https://imidi.co.uk'
-          }
-        }
-
-        window.addEventListener('message', handleMessage)
-
-        // Siguranță: dacă puntea dintre domenii nu răspunde în 2 secunde, înseamnă că puntea nu e configurată pe Next.js
-        // În acest caz, oprim bucla blocantă și lăsăm utilizatorul să vadă docs-ul fără să îl dăm afară forțat
-        setTimeout(() => {
-          if (checkingAuth.value) {
-            console.warn('Puntea de comunicare cu domeniul principal a expirat.')
-            checkingAuth.value = false
-            // Opțional: poți lăsa window.location.href dezactivat aici ca să NU mai fie redirecționat greșit
-          }
-        }, 2000)
 
       } catch (e) {
-        console.error('Auth error:', e)
-        // În caz de eroare critică de script, lăsăm utilizatorul pe pagină în loc să creăm o buclă de redirect
-        checkingAuth.value = false
+        console.error('Auth critic error:', e)
+        window.location.href = 'https://imidi.co.uk'
       }
     })
 
