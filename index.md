@@ -337,6 +337,7 @@ title: iMIDI Platform
   .im-card:hover { transform: none; }
 }
 
+
 /* MOBIL: meniul rămâne fix sus la scroll.
    VitePress îl lasă în fluxul paginii sub 960px; aici îl fixăm doar pe această pagină (html:has(.im)). */
 @media (max-width: 959px) {
