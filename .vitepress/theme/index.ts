@@ -4,6 +4,27 @@ import { h, ref, onMounted } from 'vue'
 const SUPABASE_URL = 'https://supabase.co'
 const SUPABASE_ANON_KEY = 'sb_publishable_H9tcriVnzdNjXOxgU2wLVQ_Hp_BlT4q'
 
+// Helper simplu pentru manipularea cookie-urilor în browser
+const CookieStorage = {
+  getItem(key) {
+    const name = key + "=";
+    const decodedCookie = decodeURIComponent(document.cookie);
+    const ca = decodedCookie.split(';');
+    for(let i = 0; i < ca.length; i++) {
+      let c = ca[i].trim();
+      if (c.indexOf(name) === 0) return c.substring(name.length, c.length);
+    }
+    return null;
+  },
+  setItem(key, value) {
+    // Salvează cookie-ul pe domeniul rădăcină .imidi.co.uk pentru a fi accesibil peste tot
+    document.cookie = `${key}=${encodeURIComponent(value)}; path=/; domain=.imidi.co.uk; SameSite=Lax; Secure`;
+  },
+  removeItem(key) {
+    document.cookie = `${key}=; path=/; domain=.imidi.co.uk; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax; Secure`;
+  }
+}
+
 const AuthGuardAndStatus = {
   setup() {
     const fullName = ref('')
@@ -13,16 +34,17 @@ const AuthGuardAndStatus = {
       try {
         const { createClient } = await import('@supabase/supabase-js')
         
-        // Folosim o inițializare curată care caută automat în localStorage-ul partajat
+        // Inițializăm Supabase folosind Cookie-urile partajate pe tot domeniul imidi.co.uk
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
           auth: {
+            storage: CookieStorage,
             persistSession: true,
             autoRefreshToken: true,
             detectSessionInUrl: true
           }
         })
         
-        // Așteptăm ca Supabase să își ia starea internă din browser
+        // Verificăm sesiunea curentă
         const { data: { session } } = await supabase.auth.getSession()
         
         if (session?.user) {
@@ -30,25 +52,17 @@ const AuthGuardAndStatus = {
           fullName.value = profileName || session.user.email.split('@')[0]
           checkingAuth.value = false
         } else {
-          // Facem o mică verificare suplimentară în localStorage-ul local în caz de delay
-          const localToken = window.localStorage.getItem('sb-wjwjkqghyekitpiqnqqb-auth-token')
-          if (localToken) {
-            // Dacă există urme de token, mai dăm o șansă de reîncărcare înainte de eșec
-            setTimeout(async () => {
-              const retry = await supabase.auth.getSession()
-              if (retry.data.session?.user) {
-                const pName = retry.data.session.user.user_metadata?.full_name
-                fullName.value = pName || retry.data.session.user.email.split('@')[0]
-                checkingAuth.value = false
-                return
-              }
-              window.location.href = 'https://imidi.co.uk'
-            }, 400)
-          } else {
-            // Dacă e complet gol, abia atunci execută redirecționarea
+          // Dacă nu există sesiune activă pe docs, îl trimitem la login pe domeniul principal
+          window.location.href = 'https://imidi.co.uk'
+        }
+
+        // Ascultă modificările de stare în timp real (de exemplu, dacă dă logout în altă filă)
+        supabase.auth.onAuthStateChange((event, currentSession) => {
+          if (event === 'SIGNED_OUT' || !currentSession) {
             window.location.href = 'https://imidi.co.uk'
           }
-        }
+        })
+
       } catch (e) {
         console.error('Auth error:', e)
         window.location.href = 'https://imidi.co.uk'
