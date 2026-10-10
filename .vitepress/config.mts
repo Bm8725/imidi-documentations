@@ -1,23 +1,70 @@
 import { defineConfig } from 'vitepress'
+import fs from 'fs'
+import path from 'path'
+
+// Funcție utilitară pentru a găsi ultimul fișier .md modificat în proiect
+function getLatestMarkdownUpdate() {
+  try {
+    const docsDir = path.resolve(__dirname, '../') // Directorul rădăcină al documentelor ta
+    let latestFile = null;
+    let latestMtime = 0;
+
+    // Scanăm directoarele importante menționate în sidebar
+    const foldersToScan = ['i-volution', 'ts4x', 'e-market', 'cloud'];
+
+    foldersToScan.forEach(folder => {
+      const folderPath = path.join(docsDir, folder);
+      if (fs.existsSync(folderPath)) {
+        const files = fs.readdirSync(folderPath);
+        
+        files.forEach(file => {
+          if (file.endsWith('.md')) {
+            const filePath = path.join(folderPath, file);
+            const stat = fs.statSync(filePath);
+            
+            if (stat.mtimeMs > latestMtime) {
+              latestMtime = stat.mtimeMs;
+              // Generăm link-ul formatat corect pentru VitePress (ex: /ts4x/latenta)
+              const pageName = file === 'index.md' ? '' : file.replace('.md', '');
+              latestFile = {
+                text: `🔄 Recent: ${pageName || folder}`,
+                link: `/${folder}/${pageName}`
+              };
+            }
+          }
+        });
+      }
+    });
+
+    // Dacă a găsit un fișier returnează-l, altfel pune un fallback
+    return latestFile || { text: 'Docs', link: '/' };
+  } catch (error) {
+    console.error("Eroare la citirea fișierelor markdown:", error);
+    return { text: 'Docs', link: '/' };
+  }
+}
+
+// Generăm dinamic item-ul pentru navbar la momentul rulării procesului de build / dev
+const latestUpdateItem = getLatestMarkdownUpdate();
 
 export default defineConfig({
   title: "iMIDI . Docs",
   description: "Official guides, manuals and specifications for iMIDI",
   themeConfig: {
-    logo: '/logo.png', // Place logo.png in the public folder (optional)
+    logo: '/logo.png',
     
-    // Top navigation menu (Nav Bar)
+    // Top navigation menu (Nav Bar) cu item dinamic atașat la final
     nav: [
       { text: 'Home', link: '/' },
       { text: 'TS4X Synth', link: '/ts4x/' },
       { text: 'i-volution Controller', link: '/i-volution/' },
       { text: 'E-Market', link: '/e-market/' },
-      { text: 'Cloud & mySpace', link: '/cloud/' }
+      { text: 'Cloud & mySpace', link: '/cloud/' },
+      latestUpdateItem // <-- Aici apare automat ultimul fișier editat în cod!
     ],
 
     // Sidebars organized by section
     sidebar: {
-      // Sidebar for the i-volution hardware ecosystem
       '/i-volution/': [
         {
           text: 'i-volution Controller',
@@ -38,7 +85,6 @@ export default defineConfig({
         }
       ],
 
-      // Sidebar for the TS4X Synth software engine
       '/ts4x/': [
         {
           text: 'TS4X Synth Engine',
@@ -58,7 +104,6 @@ export default defineConfig({
         }
       ],
 
-      // Sidebar for E-Market and Cloud Sync
       '/e-market/': [
         {
           text: 'E-Market Marketplace',
@@ -82,14 +127,11 @@ export default defineConfig({
       ]
     },
 
-    // Links to social networks / GitHub
     socialLinks: [
       { icon: 'github', link: 'https://github.com/Bm8725' }
     ],
 
-    // Base footer generated automatically on ALL pages of the site
     footer: {
-     
       copyright: '© Copyright iMIDI.co.uk. '
     }
   }
