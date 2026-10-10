@@ -1,35 +1,56 @@
 {
-  "hash": "5916582f",
-  "configHash": "88ecfda2",
+  "hash": "6e05d5a1",
+  "configHash": "65a3e08b",
   "lockfileHash": "d3045562",
-  "browserHash": "6cad59dc",
+  "browserHash": "5917ead4",
   "optimized": {
     "vue": {
       "src": "../../../node_modules/vue/dist/vue.runtime.esm-bundler.js",
       "file": "vue.js",
-      "fileHash": "79df0f9d",
+      "fileHash": "788d3739",
       "needsInterop": false
     },
     "vitepress > @vue/devtools-api": {
       "src": "../../../node_modules/@vue/devtools-api/dist/index.js",
       "file": "vitepress___@vue_devtools-api.js",
-      "fileHash": "5a4d77b3",
+      "fileHash": "0d89ba8a",
       "needsInterop": false
     },
     "vitepress > @vueuse/core": {
       "src": "../../../node_modules/@vueuse/core/index.mjs",
       "file": "vitepress___@vueuse_core.js",
-      "fileHash": "1921eb6f",
+      "fileHash": "2f4c6c20",
+      "needsInterop": false
+    },
+    "vitepress > @vueuse/integrations/useFocusTrap": {
+      "src": "../../../node_modules/@vueuse/integrations/useFocusTrap.mjs",
+      "file": "vitepress___@vueuse_integrations_useFocusTrap.js",
+      "fileHash": "01c079db",
+      "needsInterop": false
+    },
+    "vitepress > mark.js/src/vanilla.js": {
+      "src": "../../../node_modules/mark.js/src/vanilla.js",
+      "file": "vitepress___mark__js_src_vanilla__js.js",
+      "fileHash": "17900808",
+      "needsInterop": false
+    },
+    "vitepress > minisearch": {
+      "src": "../../../node_modules/minisearch/dist/es/index.js",
+      "file": "vitepress___minisearch.js",
+      "fileHash": "7d2f370a",
       "needsInterop": false
     },
     "@supabase/supabase-js": {
       "src": "../../../node_modules/@supabase/supabase-js/dist/index.mjs",
       "file": "@supabase_supabase-js.js",
-      "fileHash": "38b512d7",
+      "fileHash": "ec852063",
       "needsInterop": false
     }
   },
   "chunks": {
+    "chunk-BP5OA6CQ": {
+      "file": "chunk-BP5OA6CQ.js"
+    },
     "chunk-YY2KLAJF": {
       "file": "chunk-YY2KLAJF.js"
     }

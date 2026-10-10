@@ -1,8 +1,9 @@
 import { defineConfig } from 'vitepress'
 import fs from 'fs'
 import path from 'path'
+import { execSync } from 'child_process' // Modul nativ pentru executarea comenzilor Git
 
-// Dicționar de mapare pentru a afișa nume „faine” / „premium” în loc de numele brut al fișierului
+// Dicționar de mapare pentru a afișa titluri premium în loc de numele brut al fișierului
 const labelMapping = {
   'index': 'Ghid Introducere',
   'configurare': 'Configurare Ecran OLED',
@@ -22,7 +23,17 @@ const labelMapping = {
   'backup': 'Backup Securizat 30GB'
 };
 
-// Funcție premium care scanează și returnează ultimele 3 actualizări
+// Funcție care extrage numele autorului ultimului commit Git pentru un anumit fișier
+function getGitAuthor(filePath) {
+  try {
+    const author = execSync(`git log -1 --pretty=format:"%an" -- "${filePath}"`, { encoding: 'utf-8' }).trim();
+    return author || 'iMIDI Team'; // Fallback în caz că fișierul nu are încă commit-uri
+  } catch (error) {
+    return 'iMIDI Team'; // Fallback dacă proiectul nu este inițializat local cu Git
+  }
+}
+
+// Funcție premium care scanează directoarele și returnează ultimele 3 fișiere modificate + Autorul lor
 function getPremiumLatestUpdates() {
   try {
     const docsDir = path.resolve(__dirname, '../')
@@ -40,11 +51,11 @@ function getPremiumLatestUpdates() {
             const stat = fs.statSync(filePath)
             const baseName = file.replace('.md', '')
             
-            // Rezolvăm numele elegant al paginii
             const cleanTitle = labelMapping[baseName] || (baseName === 'index' ? `Acasă ${folder}` : baseName)
-            
+            const authorName = getGitAuthor(filePath);
+
             allFiles.push({
-              text: cleanTitle,
+              text: `${cleanTitle} (by ${authorName})`,
               link: `/${folder}/${baseName === 'index' ? '' : baseName}`,
               mtime: stat.mtimeMs
             })
@@ -53,31 +64,55 @@ function getPremiumLatestUpdates() {
       }
     })
 
-    // Sortăm descrescător după data modificării și luăm primele 3 rezultate
     const latestUpdates = allFiles
       .sort((a, b) => b.mtime - a.mtime)
       .slice(0, 3)
 
-    // Returnăm structura de tip Dropdown specifică VitePress
     return {
-      text: '🟢 Recent Updates',
+      text: '🔄 Latest Updates',
       items: latestUpdates
     }
   } catch (error) {
-    console.error("Eroare la generarea meniului premium:", error)
+    console.error("Eroare la generarea meniului de actualizări recente:", error)
     return { text: 'Docs', link: '/' }
   }
 }
 
-// Generăm structura dropdown la build-time
 const recentUpdatesDropdown = getPremiumLatestUpdates();
 
 export default defineConfig({
   title: "iMIDI . Docs",
   description: "Official guides, manuals and specifications for iMIDI",
   themeConfig: {
-    logo: '/logo.png',
+    logo: '/logo.png', // Plasează logo.png în folderul public
     
+    // 🔍 INTEGRAREA SISTEMULUI DE CĂUTARE PREMIUM NATIV (MiniSearch)
+    search: {
+      provider: 'local',
+      options: {
+        locales: {
+          root: {
+            translations: {
+              button: {
+                buttonText: 'Search guides...',
+                buttonAriaLabel: 'Search documentation'
+              },
+              modal: {
+                noResultsText: 'No results found for',
+                resetButtonTitle: 'Clear search query',
+                footer: {
+                  selectText: 'to select',
+                  navigateText: 'to navigate',
+                  closeText: 'to close'
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+
     // Top navigation menu (Nav Bar)
     nav: [
       { text: 'Home', link: '/' },
@@ -85,10 +120,10 @@ export default defineConfig({
       { text: 'i-volution Controller', link: '/i-volution/' },
       { text: 'E-Market', link: '/e-market/' },
       { text: 'Cloud & mySpace', link: '/cloud/' },
-      recentUpdatesDropdown // <-- Meniul Dropdown Premium adăugat dinamic la finalul bării de navigare
+      recentUpdatesDropdown // Meniul dinamic cu ultimele update-uri și autori
     ],
 
-    // Sidebars organized by section
+    // Meniurile Sidebar organizate pe secțiuni tehnice
     sidebar: {
       '/i-volution/': [
         {
@@ -152,10 +187,12 @@ export default defineConfig({
       ]
     },
 
+    // Link către profilul de GitHub
     socialLinks: [
-      { icon: 'github', link: 'https://github.com' }
+      { icon: 'github', link: 'https://github.com/Bm8725' }
     ],
 
+    // Footer global
     footer: {
       copyright: '© Copyright iMIDI.co.uk. '
     }
