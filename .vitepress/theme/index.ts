@@ -11,21 +11,36 @@ const AuthGuardAndStatus = {
     onMounted(async () => {
       try {
         const { createClient } = await import('@supabase/supabase-js')
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
         
-        // Verificăm sesiunea direct în browser
+        // Configuram clientul sa asculte de domeniul parinte iMIDI
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          auth: {
+            storageKey: 'sb-wjwjkqghyekitpiqnqqb-auth-token', // Cheia standard Supabase
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+            flowType: 'pkce',
+            cookieOptions: {
+              domain: '.imidi.co.uk', // ATENTIE la punct: imparte sesiunea intre docs si site-ul mare
+              path: '/',
+              sameSite: 'lax',
+              secure: true
+            }
+          }
+        })
+        
+        // Verificam sesiunea partajata
         const { data: { session } } = await supabase.auth.getSession()
         
         if (session?.user) {
-          // Dacă ești logat pe imidi.co.uk, îți ia numele sau email-ul direct
           const profileName = session.user.user_metadata?.full_name || session.user.user_metadata?.name
           fullName.value = profileName || session.user.email.split('@')[0]
         } else {
-          // CORECTAT: Trimite utilizatorul direct la pagina ta reală de login
+          // Daca nu te gaseste logat pe niciun subdomeniu, abia atunci te trimite la login
           window.location.href = 'https://imidi.co.uk'
         }
       } catch (e) {
-        console.error('Eroare la autentificare:', e)
+        console.error('Eroare la sincronizare domeniu:', e)
       }
     })
 
