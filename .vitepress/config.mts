@@ -89,8 +89,8 @@ export default defineConfig({
 
     // Footer-ul de bază generat automat pe TOATE paginile site-ului
     footer: {
-      message: 'Platformă dezvoltată în conformitate cu standardele iMIDI Ecosystem.',
-      copyright: '© 2026 Copyright iMIDI.co.uk. Toate drepturile rezervate.'
+     
+      copyright: '© Copyright iMIDI.co.uk. '
     }
   }
 })
