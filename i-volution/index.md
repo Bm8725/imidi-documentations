@@ -12,6 +12,7 @@ i-VOLUTION is a universal MIDI controller purpose-built for accordion. It provid
 - **Firmware:** no updates required, works out of the box
 - **Warranty:** 2 years
 
+
 ## Key Features
 
 ### Bellow Real Emulation
