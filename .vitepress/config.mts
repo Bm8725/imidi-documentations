@@ -84,7 +84,7 @@ export default defineConfig({
 
     // Links to social networks / GitHub
     socialLinks: [
-      { icon: 'github', link: 'https://github.com' }
+      { icon: 'github', link: 'https://github.com/Bm8725' }
     ],
 
     // Base footer generated automatically on ALL pages of the site
