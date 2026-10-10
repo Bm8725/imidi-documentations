@@ -4,36 +4,6 @@ import { h, ref, onMounted } from 'vue'
 const SUPABASE_URL = 'https://supabase.co'
 const SUPABASE_ANON_KEY = 'sb_publishable_H9tcriVnzdNjXOxgU2wLVQ_Hp_BlT4q'
 
-// Funcție care caută direct în cookie-urile partajate de domeniul principal
-function getSharedSupabaseSession() {
-  if (typeof document === 'undefined') return null;
-  
-  // Supabase folosește un format standard de salvare în cookie-uri: sb-[proiect]-auth-token
-  // Căutăm orice cookie care conține structura de auth-token de la Supabase
-  const cookies = document.cookie.split(';');
-  for (let c of cookies) {
-    c = c.trim();
-    if (c.includes('auth-token=')) {
-      try {
-        const rawValue = c.split('=')[1];
-        // Decodificăm string-ul deoarece Supabase îl salvează parțial encodat în baza de date / rețea
-        const decodedValue = decodeURIComponent(rawValue);
-        
-        // Dacă valoarea începe cu „base64:”, o decodificăm (specific pentru anumite versiuni de Supabase)
-        if (decodedValue.startsWith('base64:')) {
-          const base64Content = decodedValue.replace('base64:', '');
-          return JSON.parse(atob(base64Content));
-        }
-        
-        return JSON.parse(decodedValue);
-      } catch (e) {
-        console.error("Eroare la parsarea cookie-ului de auth:", e);
-      }
-    }
-  }
-  return null;
-}
-
 const AuthGuardAndStatus = {
   setup() {
     const fullName = ref('')
@@ -43,41 +13,38 @@ const AuthGuardAndStatus = {
       try {
         const { createClient } = await import('@supabase/supabase-js')
         
-        // Încercăm mai întâi să interceptăm manual sesiunea nativă din cookie-ul site-ului mamă
-        const sharedSession = getSharedSupabaseSession()
-        
-        // Inițializăm clientul curat
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
           auth: {
-            persistSession: true,
+            persistSession: true, // Păstrează sesiunea local pe docs după ce a fost detectată o dată
             autoRefreshToken: true,
-            detectSessionInUrl: true
+            detectSessionInUrl: true // FOARTE IMPORTANT: interceptați hash-ul generat de Supabase
           }
         })
-
-        // Dacă am găsit o sesiune validă în cookie-uri, o injectăm direct în instanța din docs
-        if (sharedSession && (sharedSession.access_token || sharedSession.currentSession?.access_token)) {
-          const tokenData = sharedSession.currentSession || sharedSession;
-          
-          await supabase.auth.setSession({
-            access_token: tokenData.access_token,
-            refresh_token: tokenData.refresh_token
-          })
-        }
-
-        // Verificăm dacă instanța a asimilat cu succes sesiunea
-        const { data: { session } } = await supabase.auth.getSession()
         
+        // 1. Verificăm dacă avem deja o sesiune locală salvată pe docs
+        let { data: { session } } = await supabase.auth.getSession()
+        
+        // 2. Dacă nu există sesiune locală, verificăm dacă utilizatorul a venit direct cu token în URL (#access_token=...)
+        if (!session && (window.location.hash || window.location.search)) {
+          // Lăsăm Supabase detectSessionInUrl să proceseze hash-ul din URL timp de 300ms
+          await new Promise(resolve => setTimeout(resolve, 300))
+          const retry = await supabase.auth.getSession()
+          session = retry.data.session
+        }
+        
+        // 3. Evaluarea finală a stării de autentificare
         if (session?.user) {
           const profileName = session.user.user_metadata?.full_name || session.user.user_metadata?.name
           fullName.value = profileName || session.user.email.split('@')[0]
           checkingAuth.value = false
         } else {
-          // Dacă după toate încercările nu avem sesiune, abia atunci dăm afară utilizatorul
-          window.location.href = 'https://imidi.co.uk'
+          // Dacă sesiunea este complet absentă, redirecționăm către pagina ta de login din Next.js
+          // Îi trimitem și parametrul unde să se întoarcă după ce se loghează cu succes
+          const currentUrl = encodeURIComponent(window.location.href)
+          window.location.href = `https://imidi.co.uk{currentUrl}`
         }
       } catch (e) {
-        console.error('Auth error critic:', e)
+        console.error('Auth error pe docs:', e)
         window.location.href = 'https://imidi.co.uk'
       }
     })
