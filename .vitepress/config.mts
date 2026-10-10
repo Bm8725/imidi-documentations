@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-  title: "iMIDI Docs",
+  title: "iMIDI . Docs",
   description: "Ghiduri, Manuale și Specificații Oficiale iMIDI",
   themeConfig: {
     logo: '/logo.png', // Plasează logo.png în folderul public (opțional)

@@ -4,25 +4,34 @@ import { h, ref, onMounted } from 'vue'
 const SUPABASE_URL = 'https://supabase.co'
 const SUPABASE_ANON_KEY = 'sb_publishable_H9tcriVnzdNjXOxgU2wLVQ_Hp_BlT4q'
 
-// Helper simplu pentru manipularea cookie-urilor în browser
-const CookieStorage = {
-  getItem(key) {
-    const name = key + "=";
-    const decodedCookie = decodeURIComponent(document.cookie);
-    const ca = decodedCookie.split(';');
-    for(let i = 0; i < ca.length; i++) {
-      let c = ca[i].trim();
-      if (c.indexOf(name) === 0) return c.substring(name.length, c.length);
+// Funcție care caută direct în cookie-urile partajate de domeniul principal
+function getSharedSupabaseSession() {
+  if (typeof document === 'undefined') return null;
+  
+  // Supabase folosește un format standard de salvare în cookie-uri: sb-[proiect]-auth-token
+  // Căutăm orice cookie care conține structura de auth-token de la Supabase
+  const cookies = document.cookie.split(';');
+  for (let c of cookies) {
+    c = c.trim();
+    if (c.includes('auth-token=')) {
+      try {
+        const rawValue = c.split('=')[1];
+        // Decodificăm string-ul deoarece Supabase îl salvează parțial encodat în baza de date / rețea
+        const decodedValue = decodeURIComponent(rawValue);
+        
+        // Dacă valoarea începe cu „base64:”, o decodificăm (specific pentru anumite versiuni de Supabase)
+        if (decodedValue.startsWith('base64:')) {
+          const base64Content = decodedValue.replace('base64:', '');
+          return JSON.parse(atob(base64Content));
+        }
+        
+        return JSON.parse(decodedValue);
+      } catch (e) {
+        console.error("Eroare la parsarea cookie-ului de auth:", e);
+      }
     }
-    return null;
-  },
-  setItem(key, value) {
-    // Salvează cookie-ul pe domeniul rădăcină .imidi.co.uk pentru a fi accesibil peste tot
-    document.cookie = `${key}=${encodeURIComponent(value)}; path=/; domain=.imidi.co.uk; SameSite=Lax; Secure`;
-  },
-  removeItem(key) {
-    document.cookie = `${key}=; path=/; domain=.imidi.co.uk; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax; Secure`;
   }
+  return null;
 }
 
 const AuthGuardAndStatus = {
@@ -34,17 +43,29 @@ const AuthGuardAndStatus = {
       try {
         const { createClient } = await import('@supabase/supabase-js')
         
-        // Inițializăm Supabase folosind Cookie-urile partajate pe tot domeniul imidi.co.uk
+        // Încercăm mai întâi să interceptăm manual sesiunea nativă din cookie-ul site-ului mamă
+        const sharedSession = getSharedSupabaseSession()
+        
+        // Inițializăm clientul curat
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
           auth: {
-            storage: CookieStorage,
             persistSession: true,
             autoRefreshToken: true,
             detectSessionInUrl: true
           }
         })
-        
-        // Verificăm sesiunea curentă
+
+        // Dacă am găsit o sesiune validă în cookie-uri, o injectăm direct în instanța din docs
+        if (sharedSession && (sharedSession.access_token || sharedSession.currentSession?.access_token)) {
+          const tokenData = sharedSession.currentSession || sharedSession;
+          
+          await supabase.auth.setSession({
+            access_token: tokenData.access_token,
+            refresh_token: tokenData.refresh_token
+          })
+        }
+
+        // Verificăm dacă instanța a asimilat cu succes sesiunea
         const { data: { session } } = await supabase.auth.getSession()
         
         if (session?.user) {
@@ -52,19 +73,11 @@ const AuthGuardAndStatus = {
           fullName.value = profileName || session.user.email.split('@')[0]
           checkingAuth.value = false
         } else {
-          // Dacă nu există sesiune activă pe docs, îl trimitem la login pe domeniul principal
+          // Dacă după toate încercările nu avem sesiune, abia atunci dăm afară utilizatorul
           window.location.href = 'https://imidi.co.uk'
         }
-
-        // Ascultă modificările de stare în timp real (de exemplu, dacă dă logout în altă filă)
-        supabase.auth.onAuthStateChange((event, currentSession) => {
-          if (event === 'SIGNED_OUT' || !currentSession) {
-            window.location.href = 'https://imidi.co.uk'
-          }
-        })
-
       } catch (e) {
-        console.error('Auth error:', e)
+        console.error('Auth error critic:', e)
         window.location.href = 'https://imidi.co.uk'
       }
     })
