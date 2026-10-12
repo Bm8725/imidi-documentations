@@ -1,6 +1,6 @@
 import DefaultTheme from 'vitepress/theme'
 import { h, ref, onMounted } from 'vue'
-
+import './custom.css'
 const SUPABASE_URL = 'https://supabase.co'
 const SUPABASE_ANON_KEY = 'sb_publishable_H9tcriVnzdNjXOxgU2wLVQ_Hp_BlT4q'
 

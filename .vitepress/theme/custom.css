@@ -1,0 +1,145 @@
+/* ==========================================
+   1. REGULI DE ACCENT GLOBALE (Butoane active, etc.)
+   ========================================== */
+:root {
+  --vp-c-brand-1: #ffcc00; /* Galbenul de brand curat */
+  --vp-c-brand-2: #e6b800; 
+  --vp-c-brand-3: #cc9900;
+}
+
+/* ==========================================
+   2. LIGHT MODE (Modul Luminos)
+   - Bara plină galbenă premium tip "Stripe/Vercel"
+   ========================================== */
+:root:not(.dark) {
+  --vp-nav-bg-color: #ffcc00 !important;
+  
+  /* Textul pe bara galbenă este negru intens, ultra-sharp */
+  --vp-nav-text-color: #0f172a !important;
+  --vp-c-text-1: #0f172a !important;
+  --vp-c-text-2: #334155 !important;
+  --vp-c-gutter: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Corecții elemente interne pentru modul luminos */
+:root:not(.dark) .VPNavBar .VPLink,
+:root:not(.dark) .VPNavBar .text,
+:root:not(.dark) .VPNavBar .VPNavBarMenuLink,
+:root:not(.dark) .VPNavBar .hamburger-bar,
+:root:not(.dark) .VPNavBar .search-icon {
+  color: #0f172a !important;
+  fill: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+/* ==========================================
+   3. DARK MODE (Modul Întunecat) - INSPIRAT DIN GITHUB / VERCEL
+   - Eliminat complet textul galben deranjant
+   ========================================== */
+.dark {
+  /* Fundalul barei devine un gri-închis profund, mat (Slate Blue/Charcoal) */
+  --vp-nav-bg-color: #111318 !important; 
+  
+  /* TEXTUL DEVINE ALB-ALMANDIN / GRI CURAT (Fără galben pe text!) */
+  --vp-nav-text-color: #f8fafc !important; /* Alb extrem de curat și odihnitor pentru ochi */
+  --vp-c-text-1: #f8fafc !important;
+  --vp-c-text-2: #94a3b8 !important; /* Gri discret pentru elementele secundare */
+  
+  /* Linia fină de sub bară este singura care primește o tentă galbenă discretă, elegantă */
+  --vp-c-gutter: rgba(255, 204, 0, 0.15) !important;
+}
+
+/* Corecții text și iconițe în Dark Mode */
+.dark .VPNavBar .VPLink,
+.dark .VPNavBar .text,
+.dark .VPNavBar .VPNavBarMenuLink,
+.dark .VPNavBar .hamburger-bar,
+.dark .VPNavBar .search-icon {
+  color: #e2e8f0 !important; /* Text soft-white, premium */
+  fill: #e2e8f0 !important;
+  font-weight: 600 !important;
+}
+
+/* Doar elementul activ din meniu primește accentul galben când ești pe pagina respectivă */
+.dark .VPNavBar .VPNavBarMenuLink.active {
+  color: #ffcc00 !important;
+}
+
+/* ==========================================
+   4. RESPONSIVITATE ȘI FIXURI MOBIL (Media Queries)
+   ========================================== */
+
+/* Proprietăți de bază pentru bară (Desktop & Mobil) */
+.VPNavBar {
+  background-color: var(--vp-nav-bg-color) !important;
+  border-bottom: 1px solid var(--vp-c-gutter) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  transition: background-color 0.3s ease;
+}
+
+/* Când se deschide meniul pe mobil, VitePress folosește o mască pe tot ecranul (.VPNavScreen) */
+@media (max-width: 959px) {
+  /* Ne asigurăm că pe mobil panoul care glisează are fundalul corect al temei, nu galben strident */
+  .VPNavScreen {
+    background-color: #ffffff !important;
+  }
+  .dark .VPNavScreen {
+    background-color: #111318 !important;
+  }
+  
+  /* Textele din interiorul meniului mobil revin la culorile normale pentru a fi citibile */
+  .VPNavScreen .VPLink, 
+  .VPNavScreen .text {
+    color: #0f172a !important;
+  }
+  .dark .VPNavScreen .VPLink, 
+  .dark .VPNavScreen .text {
+    color: #f8fafc !important;
+  }
+}
+
+/* ==========================================
+   5. DROPDOWN-URI (Meniul tău cu Git Updates)
+   ========================================== */
+.VPNavBar .VPMenu {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
+}
+.VPNavBar .VPMenu .text, 
+.VPNavBar .VPMenu .VPLink {
+  color: #0f172a !important;
+}
+.dark .VPNavBar .VPMenu {
+  background: #1e222b !important;
+  border: 1px solid #334155 !important;
+}
+.dark .VPNavBar .VPMenu .text, 
+.dark .VPNavBar .VPMenu .VPLink {
+  color: #f8fafc !important;
+}
+
+/* ==========================================
+   6. INTERFAȚA PREMIUM PENTRU WIDGET-UL SUPABASE (👤 Utilizator)
+   ========================================== */
+.VPNavBar div[style*="display: flex"] {
+  background: #0f172a !important; /* Widget negru pe bara galbenă (Light Mode) */
+  color: #ffcc00 !important;
+  border: 1px solid #0f172a !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .VPNavBar div[style*="display: flex"] {
+  background: rgba(255, 204, 0, 0.1) !important; /* Widget transparent cu tentă galbenă (Dark Mode) */
+  color: #ffcc00 !important;                      /* Textul lui rămâne galben-accent ca să iasă în evidență */
+  border: 1px solid rgba(255, 204, 0, 0.3) !important;
+  box-shadow: 0 0 12px rgba(255, 204, 0, 0.05);
+}
+
+.VPNavBar div[style*="display: flex"]:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
