@@ -72,9 +72,7 @@ graph LR
 
 <iframe style="width: 100%; height: 500px; border: none; margin: 20px 0;" src="/network-simulation.html"></iframe>
 
-
 ---
-
 
 ## 3. Core Pillars of the Performance Ecosystem
 
