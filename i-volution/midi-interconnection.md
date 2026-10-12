@@ -75,6 +75,7 @@ graph LR
 
 ---
 
+
 ## 3. Core Pillars of the Performance Ecosystem
 
 ### A. The Instrument as an Intelligent Edge Node
