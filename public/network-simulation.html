@@ -3,26 +3,104 @@
 <head>
 <meta charset="utf-8">
 <style>
-  body { margin: 0; background: #0f172a; color: #f8fafc; font-family: system-ui, sans-serif; padding: 15px; display: flex; flex-direction: column; gap: 12px; overflow: hidden; user-select: none;}
-  .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; z-index: 20; }
-  .btn { background: #1e293b; color: #f8fafc; border: 1px solid #334155; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; text-align: center; transition: all 0.2s ease; }
-  .btn:hover { background: #334155; }
-  .btn.active-p2p { background: #064e3b; border-color: #10b981; color: #34d399; }
-  .btn.active-turn { background: #431407; border-color: #ea580c; color: #f97316; }
-  .btn-action { grid-column: span 2; background: #2563eb; color: #fff; border: none; padding: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-radius: 6px; }
-  .btn-action:disabled { background: #1e293b; color: #64748b; cursor: not-allowed; border: 1px dashed #334155; }
-  .canvas-container { position: relative; width: 100%; height: 260px; background: #020617; border-radius: 8px; border: 1px solid #1e293b; display: flex; justify-content: center; align-items: center; cursor: grab; }
+  body { 
+    margin: 0; 
+    background: #090d16; 
+    color: #ffffff; 
+    font-family: system-ui, -apple-system, sans-serif; 
+    padding: 15px; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 12px; 
+    overflow: hidden; 
+    user-select: none;
+  }
+  .controls-grid { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 10px; 
+    z-index: 20; 
+  }
+  /* Butoane Monocrome stil Premium Corporate */
+  .btn { 
+    background: #111827; 
+    color: #9ca3af; 
+    border: 1px solid #374151; 
+    padding: 12px; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    font-weight: 600; 
+    font-size: 12px; 
+    text-align: center; 
+    transition: all 0.2s ease; 
+  }
+  .btn:hover { 
+    background: #1f2937; 
+    color: #ffffff;
+    border-color: #4b5563;
+  }
+  /* Stări active curate pe nuanțe de gri și alb */
+  .btn.active-p2p, .btn.active-turn { 
+    background: #ffffff; 
+    border-color: #ffffff; 
+    color: #000000; 
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.1);
+  }
+  .btn-action { 
+    grid-column: span 2; 
+    background: #ffffff; 
+    color: #000000; 
+    border: none; 
+    padding: 14px; 
+    font-weight: 700; 
+    text-transform: uppercase; 
+    letter-spacing: 0.05em; 
+    border-radius: 8px;
+  }
+  .btn-action:not(:disabled):hover {
+    background: #e5e7eb;
+  }
+  .btn-action:disabled { 
+    background: #111827; 
+    color: #4b5563; 
+    cursor: not-allowed; 
+    border: 1px dashed #374151; 
+  }
+  .canvas-container { 
+    position: relative; 
+    width: 100%; 
+    height: 270px; 
+    background: #030712; 
+    border-radius: 8px; 
+    border: 1px solid #1f293b;
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    cursor: grab; 
+  }
   .canvas-container:active { cursor: grabbing; }
   canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-  .terminal { background: #000; border: 1px solid #1e293b; border-radius: 6px; padding: 10px; font-family: monospace; font-size: 11px; height: 70px; overflow-y: auto; color: #34d399; line-height: 1.4; }
+  
+  .terminal { 
+    background: #000000; 
+    border: 1px solid #1f293b; 
+    border-radius: 8px; 
+    padding: 12px; 
+    font-family: monospace; 
+    font-size: 11px; 
+    height: 50px; 
+    overflow-y: auto; 
+    color: #e5e7eb; 
+    line-height: 1.5; 
+  }
 </style>
 </head>
 <body>
 
 <div class="controls-grid">
-  <button class="btn" id="btnP2P" onclick="setRoute('P2P')">Method 1: Direct P2P (STUN)</button>
-  <button class="btn" id="btnTURN" onclick="setRoute('TURN')">Method 2: Cloudflare TURN</button>
-  <button class="btn btn-action" id="btnStream" onclick="triggerTelemetry()" disabled>Trigger Telemetry Packet (0ms Active)</button>
+  <button class="btn" id="btnP2P" onclick="setRoute('P2P')">Method 1: Native e-RTC™ P2P Layer</button>
+  <button class="btn" id="btnTURN" onclick="setRoute('TURN')">Method 2: Cloudflare Anycast Matrix</button>
+  <button class="btn btn-action" id="btnStream" onclick="triggerTelemetry()" disabled>Select Protocol Execution Layer</button>
 </div>
 
 <div class="canvas-container" id="container">
@@ -30,7 +108,7 @@
 </div>
 
 <div class="terminal" id="termBox">
-  [System Ready]: Select a network routing mode above to initialize signaling handshakes...
+  [System Ready]: Awaiting e-RTC™ protocol matrix activation layer selection...
 </div>
 
 <script>
@@ -47,8 +125,8 @@
   window.addEventListener('resize', resize);
   resize();
 
-  let rotationX = 0.3;
-  let rotationY = 0.8;
+  let rotationX = 0.4;
+  let rotationY = 0.5;
   let isDragging = false;
   let previousMousePosition = { x: 0, y: 0 };
   let currentMode = null; 
@@ -56,23 +134,24 @@
   let packetProgress = -1;
 
   const points = [];
-  for (let i = 0; i < 250; i++) {
+  for (let i = 0; i < 280; i++) {
     const theta = Math.acos(Math.random() * 2 - 1);
     const phi = Math.random() * Math.PI * 2;
     points.push({ x: Math.sin(theta)*Math.cos(phi), y: Math.sin(theta)*Math.sin(phi), z: Math.cos(theta) });
   }
 
+  // Noduri rețea randate în nuanțe curate de alb/gri contrastant
   const nodes = {
-    RO: { x: 0.3,  y: 0.6,  z: 0.7,  label: 'RO Edge', color: '#10b981' },
-    TS4X: { x: -0.6, y: -0.4, z: 0.6,  label: 'TS4X Core', color: '#3b82f6' },
-    FRA: { x: 0.1,  y: 0.8,  z: -0.2, label: 'CF Frankfurt (Proxy)', color: '#f97316' }
+    RO: { x: 0.35,  y: 0.55,  z: 0.75, label: 'RO Edge Node', color: '#ffffff' },
+    TS4X: { x: -0.55, y: -0.45, z: 0.70, label: 'TS4X Core Engine', color: '#ffffff' },
+    FRA: { x: 0.05,  y: 0.85,  z: -0.15, label: 'CF Anycast Hub', color: '#9ca3af' }
   };
 
   container.addEventListener('mousedown', (e) => { isDragging = true; previousMousePosition = { x: e.clientX, y: e.clientY }; });
   window.addEventListener('mousemove', (e) => {
     if (!isDragging) return;
-    rotationY += (e.clientX - previousMousePosition.x) * 0.007;
-    rotationX += (e.clientY - previousMousePosition.y) * 0.007;
+    rotationY += (e.clientX - previousMousePosition.x) * 0.006;
+    rotationX += (e.clientY - previousMousePosition.y) * 0.006;
     previousMousePosition = { x: e.clientX, y: e.clientY };
   });
   window.addEventListener('mouseup', () => isDragging = false);
@@ -86,20 +165,20 @@
     document.getElementById('btnTURN').className = 'btn' + (mode === 'TURN' ? ' active-turn' : '');
     
     if(mode === 'P2P') {
-      log('[STUN Signaling]: Exchanging SDP offers... Direct hole-punching successful. Direct P2P Pipe verified.');
+      log('[e-RTC™ Secure Infrastructure]: Handshake complete -> Private Data Conduit locked.');
       btnStream.disabled = false;
-      btnStream.innerText = 'Trigger Telemetry Packet (Direct P2P)';
+      btnStream.innerText = 'Trigger Telemetry Packet (Native e-RTC™ P2P)';
     } else {
-      log('[Cloudflare TURN]: Symmetric NAT detected. Requesting tokens from /api/turn... Proxy active via Frankfurt Anycast.');
+      log('[Cloudflare Anycast Matrix]: Pipeline routing active via Enterprise Edge Proxy.');
       btnStream.disabled = false;
-      btnStream.innerText = 'Trigger Telemetry Packet (via Cloudflare Relay)';
+      btnStream.innerText = 'Trigger Telemetry Packet (via Cloudflare Fiber Grid)';
     }
   }
 
   function triggerTelemetry() {
     packetProgress = 0;
-    const jitter = currentMode === 'P2P' ? Math.floor(Math.random()*5)+15 : Math.floor(Math.random()*8)+22;
-    log('[Midi Stream]: Transmitting 32-bit package. Transit Jitter: ' + jitter + 'ms | Mode: ' + currentMode);
+    const jitter = currentMode === 'P2P' ? Math.floor(Math.random()*4)+12 : Math.floor(Math.random()*6)+21;
+    log('[AiRMIDI Protocol]: Streamed packet array. Telemetry Jitter: ' + jitter + 'ms | Mode: ' + currentMode);
   }
 
   function project(pt, radius, cx, cy) {
@@ -107,7 +186,7 @@
     let z1 = pt.x * Math.sin(rotationY) + pt.z * Math.cos(rotationY);
     let y2 = pt.y * Math.cos(rotationX) - z1 * Math.sin(rotationX);
     let z2 = pt.y * Math.sin(rotationX) + z1 * Math.cos(rotationX);
-    const perspective = 2 / (2 + z2 / 2.5);
+    const perspective = 2.2 / (2.2 + z2 / 2.8);
     return { x: cx + x1 * radius * perspective, y: cy + y2 * radius * perspective, depth: z2 };
   }
 
@@ -118,49 +197,53 @@
     const radius = Math.min(canvas.width, canvas.height) * 0.38;
     pulseTimer += 0.05;
 
-    if (!isDragging) rotationY += 0.001;
+    if (!isDragging) rotationY += 0.0012;
 
+    // Glob spate (Gri închis discret)
     points.forEach(p => {
       const pr = project(p, radius, cx, cy);
-      if (pr.depth > 0) { ctx.fillStyle = 'rgba(51,65,85,0.2)'; ctx.fillRect(pr.x, pr.y, 1.5, 1.5); }
+      if (pr.depth > 0) { ctx.fillStyle = 'rgba(255, 255, 255, 0.05)'; ctx.fillRect(pr.x, pr.y, 1.5, 1.5); }
     });
 
     const pRO = project(nodes.RO, radius, cx, cy);
     const pTS4X = project(nodes.TS4X, radius, cx, cy);
     const pFRA = project(nodes.FRA, radius, cx, cy);
 
+    // Linii de legătură curate alb/gri
     if (currentMode === 'P2P' && pRO.depth <= 0.2 && pTS4X.depth <= 0.2) {
-      ctx.beginPath(); ctx.strokeStyle = 'rgba(16, 185, 129, 0.6)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)'; ctx.lineWidth = 1.5;
       ctx.moveTo(pRO.x, pRO.y); ctx.lineTo(pTS4X.x, pTS4X.y); ctx.stroke();
     } else if (currentMode === 'TURN' && pRO.depth <= 0.2 && pTS4X.depth <= 0.2) {
-      ctx.beginPath(); ctx.strokeStyle = 'rgba(234, 88, 12, 0.6)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.strokeStyle = 'rgba(156, 163, 175, 0.25)'; ctx.lineWidth = 1.5;
       ctx.moveTo(pRO.x, pRO.y); ctx.lineTo(pFRA.x, pFRA.y); ctx.lineTo(pTS4X.x, pTS4X.y); ctx.stroke();
     }
 
+    // Packet-ul de date (Alb intens)
     if (packetProgress >= 0 && packetProgress <= 1) {
-      ctx.fillStyle = currentMode === 'P2P' ? '#34d399' : '#f97316';
-      ctx.shadowBlur = 10; ctx.shadowColor = ctx.fillStyle;
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowBlur = 8; ctx.shadowColor = '#ffffff';
       ctx.beginPath();
       if (currentMode === 'P2P') {
         const px = pRO.x + (pTS4X.x - pRO.x) * packetProgress;
         const py = pRO.y + (pTS4X.y - pRO.y) * packetProgress;
-        ctx.arc(px, py, 5, 0, Math.PI*2);
+        ctx.arc(px, py, 4.5, 0, Math.PI*2);
       } else {
         if (packetProgress < 0.5) {
           const t = packetProgress * 2;
-          ctx.arc(pRO.x + (pFRA.x - pRO.x)*t, pRO.y + (pFRA.y - pRO.y)*t, 5, 0, Math.PI*2);
+          ctx.arc(pRO.x + (pFRA.x - pRO.x)*t, pRO.y + (pFRA.y - pRO.y)*t, 4.5, 0, Math.PI*2);
         } else {
           const t = (packetProgress - 0.5) * 2;
-          ctx.arc(pFRA.x + (pTS4X.x - pFRA.x)*t, pFRA.y + (pTS4X.y - pFRA.y)*t, 5, 0, Math.PI*2);
+          ctx.arc(pFRA.x + (pTS4X.x - pFRA.x)*t, pFRA.y + (pTS4X.y - pFRA.y)*t, 4.5, 0, Math.PI*2);
         }
       }
       ctx.fill(); ctx.shadowBlur = 0;
-      packetProgress += 0.04;
+      packetProgress += 0.035;
     }
 
+    // Glob față (Alb semi-transparent)
     points.forEach(p => {
       const pr = project(p, radius, cx, cy);
-      if (pr.depth <= 0) { ctx.fillStyle = 'rgba(148,163,184,0.6)'; ctx.fillRect(pr.x, pr.y, 2, 2); }
+      if (pr.depth <= 0) { ctx.fillStyle = 'rgba(255, 255, 255, 0.25)'; ctx.fillRect(pr.x, pr.y, 2, 2); }
     });
 
     const renderList = [
@@ -170,8 +253,8 @@
 
     renderList.forEach(item => {
       if (item.p.depth <= 0.2) {
-        ctx.fillStyle = item.n.color; ctx.beginPath(); ctx.arc(item.p.x, item.p.y, 5, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#94a3b8'; ctx.font = '10px monospace'; ctx.fillText(item.n.label, item.p.x + 10, item.p.y + 3);
+        ctx.fillStyle = item.n.color; ctx.beginPath(); ctx.arc(item.p.x, item.p.y, 5.5, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#ffffff'; ctx.font = '600 11px system-ui'; ctx.fillText(item.n.label, item.p.x + 12, item.p.y + 4);
       }
     });
 
