@@ -33,89 +33,48 @@ function getGitAuthor(filePath) {
   }
 }
 
-// Funcție recursivă care scanează toate subdirectoarele pentru a găsi fișiere markdown
-function getAllMarkdownFiles(dirPath, folderName, allFiles = []) {
-  if (!fs.existsSync(dirPath)) return allFiles;
-  
-  const items = fs.readdirSync(dirPath);
-  
-  items.forEach(item => {
-    const fullPath = path.join(dirPath, item);
-    const stat = fs.statSync(fullPath);
-    
-    if (stat.isDirectory()) {
-      // Scanează recursiv subfolderele dacă există
-      getAllMarkdownFiles(fullPath, folderName, allFiles);
-    } else if (item.endsWith('.md')) {
-      const baseName = item.replace('.md', '');
-      const cleanTitle = labelMapping[baseName] || (baseName === 'index' ? `Acasă ${folderName}` : baseName);
-      const authorName = getGitAuthor(fullPath);
-      
-      // Calculăm link-ul relativ corect pentru structura VitePress
-      let relativeLink = '';
-      if (baseName === 'index') {
-        relativeLink = `/${folderName}/`;
-      } else {
-        relativeLink = `/${folderName}/${baseName}`;
-      }
-
-      allFiles.push({
-        text: `${cleanTitle} (by ${authorName})`,
-        link: relativeLink,
-        mtime: stat.mtimeMs
-      });
-    }
-  });
-  
-  return allFiles;
-}
-
-// Funcție premium actualizată cu path corectat
+// Funcție premium care scanează directoarele și returnează ultimele 3 fișiere modificate + Autorul lor
 function getPremiumLatestUpdates() {
   try {
-    // Încercăm mai întâi varianta standard (config în .vitepress/config.js)
-    let docsDir = path.resolve(__dirname, '../../'); 
-    const foldersToScan = ['i-volution', 'ts4x', 'e-market', 'cloud'];
-    
-    // VERIFICARE DE SIGURANȚĂ: Dacă folderele nu există la calea curentă, înseamnă că fișierul config e direct în rădăcină
-    const primaMapaExista = fs.existsSync(path.join(docsDir, foldersToScan[0]));
-    if (!primaMapaExista) {
-      // Ajustăm calea automaginit (urcă doar un nivel dacă e configurat direct în rădăcină)
-      docsDir = path.resolve(__dirname, '../');
-    }
-
-    let allFiles = [];
+    const docsDir = path.resolve(__dirname, '../')
+    const foldersToScan = ['i-volution', 'ts4x', 'e-market', 'cloud']
+    let allFiles = []
 
     foldersToScan.forEach(folder => {
-      const folderPath = path.join(docsDir, folder);
-      // Scanăm doar dacă folderul există cu adevărat pe disc
+      const folderPath = path.join(docsDir, folder)
       if (fs.existsSync(folderPath)) {
-        getAllMarkdownFiles(folderPath, folder, allFiles);
-      }
-    });
+        const files = fs.readdirSync(folderPath)
+        
+        files.forEach(file => {
+          if (file.endsWith('.md')) {
+            const filePath = path.join(folderPath, file)
+            const stat = fs.statSync(filePath)
+            const baseName = file.replace('.md', '')
+            
+            const cleanTitle = labelMapping[baseName] || (baseName === 'index' ? `Acasă ${folder}` : baseName)
+            const authorName = getGitAuthor(filePath);
 
-    // Sortăm descrescător după data ultimei modificări (mtime)
+            allFiles.push({
+              text: `${cleanTitle} (by ${authorName})`,
+              link: `/${folder}/${baseName === 'index' ? '' : baseName}`,
+              mtime: stat.mtimeMs
+            })
+          }
+        });
+      }
+    })
+
     const latestUpdates = allFiles
       .sort((a, b) => b.mtime - a.mtime)
-      .slice(0, 3);
-
-    // DEBUG CLI: Îți va scrie în terminalul de VS Code exact ce a găsit sau dacă e gol
-    console.log(`[iMIDI Debug] S-au găsit ${allFiles.length} fișiere Markdown în total.`);
-
-    if (latestUpdates.length === 0) {
-      return { 
-        text: '🔄 Latest Updates', 
-        items: [{ text: 'Nu s-au găsit fișiere .md', link: '/' }] 
-      };
-    }
+      .slice(0, 3)
 
     return {
       text: '🔄 Latest Updates',
       items: latestUpdates
-    };
+    }
   } catch (error) {
-    console.error("Eroare la generarea meniului de actualizări recente:", error);
-    return { text: '🔄 Updates', items: [{ text: 'Go to Home', link: '/' }] };
+    console.error("Eroare la generarea meniului de actualizări recente:", error)
+    return { text: 'Docs', link: '/' }
   }
 }
 
@@ -124,13 +83,15 @@ const recentUpdatesDropdown = getPremiumLatestUpdates();
 export default defineConfig({
   title: ". DOCS",
   description: "Official guides, manuals and specifications for iMIDI",
-  head: [
-    ['link', { rel: 'icon', href: '/logo.png' }]
+    head: [
+    ['link', { rel: 'icon', href: '/logo.png' }] 
+    // Dacă ai fișier .png, folosești: ['link', { rel: 'icon', href: '/favicon.png', type: 'image/png' }]
   ],
 
   themeConfig: {
-    logo: '/logo.png',
+    logo: '/logo.png', // Plasează logo.png în folderul public
     
+ 
     search: {
       provider: 'local',
       options: {
@@ -156,6 +117,7 @@ export default defineConfig({
       }
     },
 
+
     // Top navigation menu (Nav Bar)
     nav: [
       { text: 'Home', link: '/' },
@@ -163,7 +125,7 @@ export default defineConfig({
       { text: 'i-volution Controller', link: '/i-volution/' },
       { text: 'E-Market', link: '/e-market/' },
       { text: 'Cloud & mySpace', link: '/cloud/' },
-      recentUpdatesDropdown // Meniul dinamic reparat
+      recentUpdatesDropdown // Meniul dinamic cu ultimele update-uri și autori
     ],
 
     // Meniurile Sidebar organizate pe secțiuni tehnice
@@ -230,10 +192,12 @@ export default defineConfig({
       ]
     },
 
+    // Link către profilul de GitHub
     socialLinks: [
       { icon: 'github', link: 'https://github.com/Bm8725' }
     ],
 
+    // Footer global
     footer: {
       copyright: '© Copyright iMIDI.co.uk. '
     }
