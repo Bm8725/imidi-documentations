@@ -65,7 +65,6 @@ graph LR
 ```
 
 ---
-
 ### Interactive Network Globe & Topology Simulator
 
 *The live module below renders a simulated real-time 3D telemetry globe tracking data propagation across Cloudflare Anycast edge servers directly down to the TS4X endpoint. Select your routing protocol below to run the physical simulation. Drag to orbit the 3D grid.*
