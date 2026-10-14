@@ -194,7 +194,7 @@ export default defineConfig({
 
     // Link către profilul de GitHub
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/Bm8725' }
+      { icon: 'github', link: 'https://github.com/' }
     ],
 
     // Footer global
